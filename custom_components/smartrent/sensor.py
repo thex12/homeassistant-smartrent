@@ -2,7 +2,7 @@
 
 from typing import Optional, Union
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.helpers.device_registry import DeviceEntryType
 from smartrent import DoorLock, Sensor, Thermostat
@@ -45,6 +45,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
         async_add_entities([SmartrentSensor(motion_sensor, "battery_level", "battery")])
 
 
+_SENSOR_DEVICE_CLASS_MAP: dict[str, SensorDeviceClass] = {
+    "temperature": SensorDeviceClass.TEMPERATURE,
+    "humidity": SensorDeviceClass.HUMIDITY,
+    "battery": SensorDeviceClass.BATTERY,
+}
+
+
 class SmartrentSensor(SensorEntity):
     def __init__(
         self,
@@ -55,7 +62,7 @@ class SmartrentSensor(SensorEntity):
         super().__init__()
         self.device = device
         self.sensor_name = sensor_name
-        self._device_class = device_class
+        self._device_class = _SENSOR_DEVICE_CLASS_MAP.get(device_class) if device_class else None
 
         self.device.start_updater()
         self.device.set_update_callback(self.async_schedule_update_ha_state)
@@ -87,18 +94,18 @@ class SmartrentSensor(SensorEntity):
         return getattr(self.device, f"get_{self.sensor_name}")()
 
     @property
-    def device_class(self):
+    def device_class(self) -> Optional[SensorDeviceClass]:
         return self._device_class
 
     @property
-    def state_class(self):
+    def state_class(self) -> Optional[SensorStateClass]:
         return SensorStateClass.MEASUREMENT if self._device_class else None
 
     @property
-    def native_unit_of_measurement(self):
-        if self._device_class == "temperature":
+    def native_unit_of_measurement(self) -> Optional[str]:
+        if self._device_class == SensorDeviceClass.TEMPERATURE:
             return UnitOfTemperature.FAHRENHEIT
-        if self._device_class in ["humidity", "battery"]:
+        if self._device_class in (SensorDeviceClass.HUMIDITY, SensorDeviceClass.BATTERY):
             return PERCENTAGE
 
     @property

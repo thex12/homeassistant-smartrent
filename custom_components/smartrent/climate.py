@@ -2,11 +2,11 @@
 import logging
 from typing import Optional
 
-from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import (
+from homeassistant.components.climate import (
+    ClimateEntity,
+    ClimateEntityFeature,
     FAN_AUTO,
     FAN_ON,
-    ClimateEntityFeature,
     HVACAction,
     HVACMode,
 )
